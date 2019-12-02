@@ -2,21 +2,18 @@
   <div class="post-container">
     <div class="edit-header">
       <div class="button-area">
-        <el-button round
-                   class="save-button">保存</el-button>
         <el-button type="primary"
                    round
                    class="publish-button"
-                   @click="publish">发布</el-button>
+                   @click="$route.query.id ? update() : publish()">{{$route.query.id ? '保存编辑' : '发布'}}</el-button>
       </div>
       <div class="title">
-        <span>标题：</span>
-        <el-input v-model="title"
+        <el-input v-model="title" placeholder="标题"
                   class="title-input"></el-input>
       </div>
       <div class="tabs">
-        <span>标签：</span>
-        <el-checkbox-group v-model="tabs" style="display: inline;">
+        <el-checkbox-group v-model="tabs"
+                           style="display: inline;">
           <el-checkbox label="1">技术</el-checkbox>
           <el-checkbox label="2">摄影</el-checkbox>
           <el-checkbox label="3">生活</el-checkbox>
@@ -59,15 +56,13 @@
     .title {
       height: 60px;
       line-height: 60px;
-       .title-input {
-      width: 40%;
-    }
+      .title-input {
+      }
     }
     .tabs {
       height: 60px;
       line-height: 60px;
     }
-   
   }
   .edit-area {
   }
@@ -108,7 +103,7 @@ export default {
       language_url: `/tinymce/langs/zh_CN.js`,
       language: 'zh_CN',
       min_height: 500,
-      height: 700,
+      height: 600,
       browser_spellcheck: true, // 拼写检查
       branding: false, // 去水印
       // elementpath: false,  //禁用编辑器底部的状态栏
@@ -130,25 +125,73 @@ export default {
   },
   mounted() {
     this.$api.getQiniuUploadToken().then((data) => {
-      console.log(data.data.data.uploadToken)
-      this.qiniuUploadToken = data.data.data.uploadToken
+      this.qiniuUploadToken = data.data.uploadToken
     }, () => {
     })
+    if (this.$route.query.id) {
+      this.getArticleInfo()
+    }
   },
   activated() {
     this.tinymceFlag++
   },
   methods: {
+    // 获取文章详情
+    getArticleInfo() {
+      this.$api.getArticleInfo({id: this.$route.query.id}).then((data) => {
+        if (data.code === 'S_OK') {
+          this.title = data.data.title
+          this.content = data.data.content
+          this.tabs = data.data.tabs.split(',')
+        }
+      }, (error) => {
+        console.log(error)
+      })
+    },
     // 插入图片至编辑器
     insertImage(res, file) {
       this.$refs.uploadImageInput.click()
     },
-    // 发布内容
+    // 发布文章
     publish() {
-      this.$api.createArticle({
-        title: this.title,
-        content: this.content,
-        tabs: this.tabs
+      this.$confirm('确定发布内容?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$api.createArticle({
+          title: this.title,
+          content: this.content,
+          tabs: this.tabs
+        }).then(() => {
+          this.$message({
+            type: 'success',
+            message: '发布成功'
+          })
+        }, () => {
+          this.$message({
+            type: 'info',
+            message: '发布失败'
+          })
+        })
+      }).catch(() => {
+      })
+    },
+    // 更新文章
+    update() {
+      this.$api.updateArticle({id: this.$route.query.id, title: this.title, content: this.content, tabs: this.tabs}).then((data) => {
+        if (data.code === 'S_OK') {
+          this.$message({
+            type: 'success',
+            message: '更新成功'
+          })
+        }
+      }, (error) => {
+          this.$message({
+            type: 'info',
+            message: '发布失败'
+          })
+        console.log(error)
       })
     },
     // 图片上传
