@@ -91,7 +91,7 @@ export default {
       content: '',
       tabs: [],
       qiniuUploadToken: '',
-      qiniuCDN: 'http://q0ab5cay6.bkt.clouddn.com/',
+      qiniuCDN: 'http://cdn.zijianxie.com/',
       uploadImageSrc: ''
     }
   },
@@ -201,6 +201,7 @@ export default {
       }, (err) => {
         // subscription.unsubscribe()
       }, (data) => {
+        console.log('七牛云上传成功')
         this.uploadImageSrc = this.qiniuCDN + data.key
         tinymce.execCommand('mceInsertContent', false, `<img style="width:60%" src=${this.uploadImageSrc}>`)
       })
